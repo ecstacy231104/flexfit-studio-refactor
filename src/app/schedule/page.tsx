@@ -1,14 +1,19 @@
+
 "use client";
 
+import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/format";
 
 export default function SchedulePage() {
   const utils = trpc.useUtils();
   const { data: user } = trpc.auth.me.useQuery();
-  const { data: classes, isLoading } = trpc.classes.list.useQuery({
-    from: new Date().toISOString(),
-  });
+  // Computed once per mount instead of on every render — otherwise the
+  // query input changes each render (new Date().toISOString() is never
+  // equal to itself), which React Query treats as a brand new query and
+  // refetches endlessly instead of settling.
+  const from = useMemo(() => new Date().toISOString(), []);
+  const { data: classes, isLoading } = trpc.classes.list.useQuery({ from });
 
   const book = trpc.bookings.book.useMutation({
     onSuccess: async () => {
